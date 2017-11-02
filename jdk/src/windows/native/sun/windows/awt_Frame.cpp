@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,10 @@ MsgRouting AwtFrame::WmShowWindow(BOOL show, UINT status)
             if (fgProcessID != ::GetCurrentProcessId()) {
                 AwtWindow* window = (AwtWindow*)GetComponent(GetHWnd());
 
-                if (window != NULL && window->IsFocusableWindow() && window->IsAutoRequestFocus() &&
+                if (window != NULL &&
+                    window->IsFocusableWindow() &&
+                    window->IsAutoRequestFocus() &&
+                    !::IsWindowVisible(GetHWnd()) && // the window is really showing
                     !::IsWindow(GetModalBlocker(GetHWnd())))
                 {
                     // When the Java process is not allowed to set the foreground window
@@ -1113,11 +1116,19 @@ AwtMenuBar* AwtFrame::GetMenuBar()
 
 void AwtFrame::SetMenuBar(AwtMenuBar* mb)
 {
+    if (menuBar) {
+        menuBar->SetFrame(NULL);
+    }
     menuBar = mb;
     if (mb == NULL) {
         // Remove existing menu bar, if any.
         ::SetMenu(GetHWnd(), NULL);
     } else {
+        AwtFrame* oldFrame = menuBar->GetFrame();
+        if (oldFrame && oldFrame != this) {
+            oldFrame->SetMenuBar(NULL);
+        }
+        menuBar->SetFrame(this);
         if (menuBar->GetHMenu() != NULL) {
             ::SetMenu(GetHWnd(), menuBar->GetHMenu());
         }
@@ -1570,12 +1581,12 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 
     PDATA pData;
 
-    pData = JNI_GET_PDATA(peer);
+    JNI_CHECK_PEER_GOTO(peer, ret);
     AwtFrame *f = (AwtFrame *)pData;
 
     // dialog here may be NULL, for example, if the blocker is a native dialog
     // however, we need to install/unistall modal hooks anyway
-    pData = JNI_GET_PDATA(blockerPeer);
+    JNI_CHECK_PEER_GOTO(blockerPeer, ret);
     AwtDialog *d = (AwtDialog *)pData;
 
     if ((f != NULL) && ::IsWindow(f->GetHWnd()))
@@ -1627,7 +1638,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             }
         }
     }
-
+ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(peer);
     env->DeleteGlobalRef(blockerPeer);
@@ -1799,8 +1810,6 @@ Java_sun_awt_windows_WFramePeer_createAwtFrame(JNIEnv *env, jobject self,
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtFrame::Create);
-    PDATA pData;
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }
@@ -1914,8 +1923,6 @@ Java_sun_awt_windows_WEmbeddedFramePeer_create(JNIEnv *env, jobject self,
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtFrame::Create);
-    PDATA pData;
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }
