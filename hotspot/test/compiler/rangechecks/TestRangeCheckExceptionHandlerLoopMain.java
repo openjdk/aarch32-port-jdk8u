@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,10 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-// key: compiler.misc.fatal.err.no.java.lang
-// options: -Xbootclasspath: -classpath .
-// run: backdoor
+/*
+ * @test
+ * @bug 8134883
+ * @summary C1's range check elimination breaks with a non-natural loop that an exception handler as one entry
+ * @compile TestRangeCheckExceptionHandlerLoop.jasm
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestRangeCheckExceptionHandlerLoopMain
+ */
 
-class NoJavaLang { }
+public class TestRangeCheckExceptionHandlerLoopMain {
+    public static void main(String[] args) throws Exception {
+        Exception exception = new Exception();
+        int[] array = new int[10];
+        for (int i = 0; i < 20000; i++) {
+            TestRangeCheckExceptionHandlerLoop.test(false, array, exception);
+        }
+    }
+}

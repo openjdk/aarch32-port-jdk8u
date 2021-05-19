@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,28 @@
  * questions.
  */
 
-// key: compiler.misc.fatal.err.no.java.lang
-// options: -Xbootclasspath: -classpath .
-// run: backdoor
+import java.util.Arrays;
 
-class NoJavaLang { }
+import javax.print.PrintServiceLookup;
+
+/*
+ * @test
+ * @bug 8241829
+ */
+public final class PrintServicesSecurityManager {
+
+    public static void main(String[] args) throws InterruptedException {
+        System.setSecurityManager(new SecurityManager());
+        test();
+        Thread.sleep(3000); // to be sure the pooling thread started
+        test();
+    }
+
+    private static void test() {
+        Object[] services = PrintServiceLookup.lookupPrintServices(null, null);
+        if (services.length != 0) {
+            System.err.println("services = " + Arrays.toString(services));
+            throw new RuntimeException("The array of Services must be empty");
+        }
+    }
+}

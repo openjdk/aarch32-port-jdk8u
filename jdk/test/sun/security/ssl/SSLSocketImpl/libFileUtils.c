@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,20 @@
  * questions.
  */
 
-// key: compiler.misc.fatal.err.no.java.lang
-// options: -Xbootclasspath: -classpath .
-// run: backdoor
+#ifdef _WIN32
 
-class NoJavaLang { }
+#include "jni.h"
+#include <windows.h>
+
+JNIEXPORT jlong JNICALL Java_SSLSocketLeak_getWinProcessHandleCount(JNIEnv *env)
+{
+    DWORD handleCount;
+    HANDLE handle = GetCurrentProcess();
+    if (GetProcessHandleCount(handle, &handleCount)) {
+        return (jlong)handleCount;
+    } else {
+        return -1L;
+    }
+}
+
+#endif  /*  _WIN32 */
