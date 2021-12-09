@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "globals_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "globals_aarch32.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "globals_linux.hpp"
 #endif
@@ -76,6 +79,15 @@
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "globals_linux_zero.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "globals_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "globals_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "globals_linux_aarch32.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "globals_solaris_x86.hpp"
 #endif
@@ -84,12 +96,6 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "globals_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "globals_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "globals_linux_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "globals_aix_ppc.hpp"
@@ -112,6 +118,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c1_globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c1_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c1_globals_linux.hpp"
@@ -141,6 +150,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c2_globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c2_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"
@@ -524,8 +536,9 @@ class CommandLineFlags {
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
+  NOT_AARCH32(                                                              \
   product_pd(bool, UseMembar,                                               \
-          "(Unstable) Issues membars on thread state transitions")          \
+          "(Unstable) Issues membars on thread state transitions"))         \
                                                                             \
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
@@ -2067,6 +2080,10 @@ class CommandLineFlags {
   product(uintx, ErgoHeapSizeLimit, 0,                                      \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM / MaxRAMFraction")                                        \
+                                                                            \
+  experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
+          "Use CGroup memory limit as physical memory limit for heap "      \
+          "sizing")                                                         \
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
