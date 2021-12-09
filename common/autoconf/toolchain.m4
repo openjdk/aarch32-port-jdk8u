@@ -1264,7 +1264,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK],
 
 
 # TOOLCHAIN_C_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                      [RUN-IF-FALSE])
+#                                   [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the C compiler supports an argument
 AC_DEFUN([TOOLCHAIN_C_COMPILER_CHECK_ARGUMENTS],
@@ -1304,7 +1304,7 @@ AC_DEFUN([TOOLCHAIN_CXX_COMPILER_CHECK_ARGUMENTS],
       [supports=no])
   AC_LANG_POP([C++])
   CXXFLAGS="$saved_cxxflags"
-  
+
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
     m4_ifval([$2], [$2], [:])
