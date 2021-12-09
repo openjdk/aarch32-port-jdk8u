@@ -94,7 +94,9 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
+#ifndef __UCLIBC__
 # include <gnu/libc-version.h>
+#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -547,11 +549,17 @@ void os::Linux::libpthread_init() {
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
+#ifndef __UCLIBC__
      // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
      static char _gnu_libc_version[32];
      jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
               "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
      os::Linux::set_glibc_version(_gnu_libc_version);
+#else
+#define STRFY(s) #s
+     os::Linux::set_glibc_version("uclibc " STRFY(__UCLIB_MAJOR__) "." STRFY(__UCLIBC_MINOR__) " stable");
+#undef STRFY
+#endif
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -2825,11 +2833,15 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // If we are running with earlier version, which did not have symbol versions,
 // we should use the base version.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifndef __UCLIBC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#else
+  return dlsym(handle, name);
+#endif
 }
 
 bool os::Linux::libnuma_init() {
@@ -2855,9 +2867,9 @@ bool os::Linux::libnuma_init() {
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
-                                                libnuma_dlsym(handle, "numa_interleave_memory")));
+                                            libnuma_dlsym(handle, "numa_interleave_memory")));
       set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
-                                              libnuma_dlsym(handle, "numa_set_bind_policy")));
+                                            libnuma_dlsym(handle, "numa_set_bind_policy")));
       set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
                                                libnuma_dlsym(handle, "numa_bitmask_isbitset")));
       set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
@@ -5669,7 +5681,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+#ifndef __UCLIBC__
   return ::getloadavg(loadavg, nelem);
+#else
+  return -1;
+#endif
 }
 
 void os::pause() {
