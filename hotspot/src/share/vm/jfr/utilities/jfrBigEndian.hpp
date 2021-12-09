@@ -42,6 +42,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytes_aarch32.hpp"
+#endif
 
 #ifndef VM_LITTLE_ENDIAN
 # define bigendian_16(x) (x)
@@ -116,7 +119,7 @@ inline T JfrBigEndian::read_unaligned(const address location) {
 inline bool JfrBigEndian::platform_supports_unaligned_reads(void) {
 #if defined(IA32) || defined(AMD64) || defined(PPC) || defined(S390)
   return true;
-#elif defined(SPARC) || defined(ARM) || defined(AARCH64)
+#elif defined(SPARC) || defined(ARM) || defined(AARCH64) || defined(AARCH32)
   return false;
 #else
   #warning "Unconfigured platform"
