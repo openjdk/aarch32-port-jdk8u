@@ -95,7 +95,9 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
+#ifndef __UCLIBC__
 # include <gnu/libc-version.h>
+#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -598,11 +600,17 @@ void os::Linux::libpthread_init() {
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
+#ifndef __UCLIBC__
      // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
      static char _gnu_libc_version[32];
      jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
               "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
      os::Linux::set_glibc_version(_gnu_libc_version);
+#else
+#define STRFY(s) #s
+     os::Linux::set_glibc_version("uclibc " STRFY(__UCLIB_MAJOR__) "." STRFY(__UCLIBC_MINOR__) " stable");
+#undef STRFY
+#endif
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -1950,6 +1958,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   #ifndef EM_486
   #define EM_486          6               /* Intel 80486 */
   #endif
+  #ifndef EM_AARCH64
+  #define EM_AARCH64    183               /* ARM AARCH64 */
+  #endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1971,7 +1982,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_MIPS_RS3_LE, EM_MIPS_RS3_LE, ELFCLASS32, ELFDATA2LSB, (char*)"MIPSel"},
     {EM_MIPS,        EM_MIPS,    ELFCLASS32, ELFDATA2MSB, (char*)"MIPS"},
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
-    {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"}
+    {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
+    {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
   };
 
   #if  (defined IA32)
@@ -2002,6 +2014,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     static  Elf32_Half running_arch_code=EM_MIPS;
   #elif  (defined M68K)
     static  Elf32_Half running_arch_code=EM_68K;
+  #elif  (defined AARCH64)
+    static  Elf32_Half running_arch_code=EM_AARCH64;
   #else
     #error Method os::dll_load requires that one of following is defined:\
          IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
@@ -2971,11 +2985,15 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifndef __UCLIBC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#else
+  return dlsym(handle, name);
+#endif
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
@@ -5796,7 +5814,6 @@ PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   static bool proc_task_unchecked = true;
-  static const char *proc_stat_path = "/proc/%d/stat";
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -5809,6 +5826,8 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
+  snprintf(proc_name, 64, "/proc/%d/stat", tid);
+
   // The /proc/<tid>/stat aggregates per-process usage on
   // new Linux kernels 2.6+ where NPTL is supported.
   // The /proc/self/task/<tid>/stat still has the per-thread usage.
@@ -5820,12 +5839,11 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
     proc_task_unchecked = false;
     fp = fopen("/proc/self/task", "r");
     if (fp != NULL) {
-      proc_stat_path = "/proc/self/task/%d/stat";
+      snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
       fclose(fp);
     }
   }
 
-  sprintf(proc_name, proc_stat_path, tid);
   fp = fopen(proc_name, "r");
   if ( fp == NULL ) return -1;
   statlen = fread(stat, 1, 2047, fp);
@@ -5879,7 +5897,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+#ifndef __UCLIBC__
   return ::getloadavg(loadavg, nelem);
+#else
+  return -1;
+#endif
 }
 
 void os::pause() {
