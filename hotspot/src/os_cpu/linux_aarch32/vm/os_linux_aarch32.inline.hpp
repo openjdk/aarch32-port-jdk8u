@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2015, Linaro Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import sun.misc.Unsafe;
-import java.lang.reflect.Field;
+#ifndef OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
+#define OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
 
-@SuppressWarnings("sunapi")
-public class Test8001071 {
-    public static Unsafe unsafe;
+#include "runtime/os.hpp"
 
-    static {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            unsafe = (Unsafe) f.get(null);
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String args[]) {
-        unsafe.getObject(new Test8001071(), Short.MAX_VALUE);
-    }
-
+// See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
+inline jlong os::rdtsc() {
+  uint64_t res;
+  uint32_t ts1, ts2;
+  __asm__ __volatile__ ("rdtsc" : "=a" (ts1), "=d" (ts2));
+  res = ((uint64_t)ts1 | (uint64_t)ts2 << 32);
+  return (jlong)res;
 }
+
+#endif // OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
