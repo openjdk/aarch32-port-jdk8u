@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "vm_version_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "vm_version_aarch32.hpp"
 #endif
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
@@ -188,6 +191,7 @@ const char* Abstract_VM_Version::jre_release_version() {
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
                  PPC64_ONLY("ppc64")             \
+                 AARCH32_ONLY("aarch32")         \
                  SPARC_ONLY("sparc")
 #endif // ZERO
 #endif
@@ -296,7 +300,7 @@ unsigned int Abstract_VM_Version::nof_parallel_worker_threads(
     // processor after the first 8.  For example, on a 72 cpu machine
     // and a chosen fraction of 5/8
     // use 8 + (72 - 8) * (5/8) == 48 worker threads.
-    unsigned int ncpus = (unsigned int) os::active_processor_count();
+    unsigned int ncpus = (unsigned int) os::initial_active_processor_count();
     return (ncpus <= switch_pt) ?
            ncpus :
           (switch_pt + ((ncpus - switch_pt) * num) / den);
