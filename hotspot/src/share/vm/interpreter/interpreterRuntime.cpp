@@ -74,6 +74,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "vm_version_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vm_version_aarch32.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -1206,6 +1209,7 @@ void SignatureHandlerLibrary::add(methodHandle method) {
         } else {
           // debugging suppport
           if (PrintSignatureHandlers) {
+            ttyLocker ttyl;
             tty->cr();
             tty->print_cr("argument handler #%d for: %s %s (fingerprint = " UINT64_FORMAT ", %d bytes generated)",
                           _handlers->length(),
