@@ -450,6 +450,9 @@ enum RTMState {
 #ifdef TARGET_ARCH_ppc
 # include "globalDefinitions_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "globalDefinitions_aarch32.hpp"
+#endif
 
 /*
  * If a platform does not support native stack walking
