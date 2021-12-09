@@ -38,6 +38,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "c2_globals_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "c2_globals_aarch32.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"
 #endif
@@ -359,9 +362,6 @@
   notproduct(ccstr, PrintIdealGraphFile, NULL,                              \
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
-                                                                            \
-  product(bool, UseOldInlining, true,                                       \
-          "Enable the 1.3 inlining strategy")                               \
                                                                             \
   product(bool, UseBimorphicInlining, true,                                 \
           "Profiling based inlining for two receivers")                     \
