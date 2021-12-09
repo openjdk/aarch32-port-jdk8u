@@ -50,6 +50,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "depChecker_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "depChecker_aarch32.hpp"
+#endif
 #ifdef SHARK
 #include "shark/sharkEntry.hpp"
 #endif
@@ -89,7 +92,7 @@ bool Disassembler::load_library() {
   {
     // Match "jvm[^/]*" in jvm_path.
     const char* base = buf;
-    const char* p = strrchr(buf, '/');
+    const char* p = strrchr(buf, *os::file_separator());
     if (p != NULL) lib_offset = p - base + 1;
     p = strstr(p ? p : base, "jvm");
     if (p != NULL)  jvm_offset = p - base;
@@ -114,7 +117,7 @@ bool Disassembler::load_library() {
     if (_library == NULL) {
       // 3. <home>/jre/lib/<arch>/hsdis-<arch>.so
       buf[lib_offset - 1] = '\0';
-      const char* p = strrchr(buf, '/');
+      const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
         strcpy(&buf[lib_offset], hsdis_library_name);
