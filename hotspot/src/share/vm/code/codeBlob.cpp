@@ -57,6 +57,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "nativeInst_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "nativeInst_aarch32.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -198,6 +201,11 @@ OopMap* CodeBlob::oop_map_for_return_address(address return_address) {
   return oop_maps()->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
+void CodeBlob::print_code() {
+  HandleMark hm;
+  ResourceMark m;
+  Disassembler::decode(this, tty);
+}
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of BufferBlob
