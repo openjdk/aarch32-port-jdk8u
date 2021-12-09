@@ -152,8 +152,16 @@ class os: AllStatic {
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
   static void initialize_initial_active_processor_count();
+
+  LINUX_ONLY(static void pd_init_container_support();)
+
  public:
   static void init(void);                      // Called before command line parsing
+
+  static void init_container_support() {       // Called during command line parsing.
+     LINUX_ONLY(pd_init_container_support();)
+  }
+
   static void init_before_ergo(void);          // Called after command line parsing
                                                // before VM ergonomics processing.
   static jint init_2(void);                    // Called after command line parsing
@@ -825,6 +833,15 @@ class os: AllStatic {
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "os_linux_zero.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "os_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "os_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "os_linux_aarch32.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "os_solaris_x86.hpp"
 #endif
@@ -833,12 +850,6 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "os_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "os_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "os_linux_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "os_aix_ppc.hpp"
