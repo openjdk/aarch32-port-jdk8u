@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,9 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
+#ifndef __UCLIBC__
 # include <gnu/libc-version.h>
+#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -103,6 +105,14 @@
 # include <sys/ioctl.h>
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
+#ifndef _GNU_SOURCE
+  #define _GNU_SOURCE
+  #include <sched.h>
+  #undef _GNU_SOURCE
+#else
+  #include <sched.h>
+#endif
 
 // if RUSAGE_THREAD for getrusage() has not been defined, do it here. The code calling
 // getrusage() is prepared to handle the associated failure.
@@ -539,11 +549,17 @@ void os::Linux::libpthread_init() {
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
+#ifndef __UCLIBC__
      // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
      static char _gnu_libc_version[32];
      jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
               "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
      os::Linux::set_glibc_version(_gnu_libc_version);
+#else
+#define STRFY(s) #s
+     os::Linux::set_glibc_version("uclibc " STRFY(__UCLIB_MAJOR__) "." STRFY(__UCLIBC_MINOR__) " stable");
+#undef STRFY
+#endif
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -1067,29 +1083,30 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
 
 // Locate initial thread stack. This special handling of initial thread stack
 // is needed because pthread_getattr_np() on most (all?) Linux distros returns
-// bogus value for initial thread.
+// bogus value for the primordial process thread. While the launcher has created
+// the VM in a new thread since JDK 6, we still have to allow for the use of the
+// JNI invocation API from a primordial thread.
 void os::Linux::capture_initial_stack(size_t max_size) {
-  // stack size is the easy part, get it from RLIMIT_STACK
-  size_t stack_size;
+
+  // max_size is either 0 (which means accept OS default for thread stacks) or
+  // a user-specified value known to be at least the minimum needed. If we
+  // are actually on the primordial thread we can make it appear that we have a
+  // smaller max_size stack by inserting the guard pages at that location. But we
+  // cannot do anything to emulate a larger stack than what has been provided by
+  // the OS or threading library. In fact if we try to use a stack greater than
+  // what is set by rlimit then we will crash the hosting process.
+
+  // Maximum stack size is the easy part, get it from RLIMIT_STACK.
+  // If this is "unlimited" then it will be a huge value.
   struct rlimit rlim;
   getrlimit(RLIMIT_STACK, &rlim);
-  stack_size = rlim.rlim_cur;
+  size_t stack_size = rlim.rlim_cur;
 
   // 6308388: a bug in ld.so will relocate its own .data section to the
   //   lower end of primordial stack; reduce ulimit -s value a little bit
   //   so we won't install guard page on ld.so's data section.
   stack_size -= 2 * page_size();
 
-  // 4441425: avoid crash with "unlimited" stack size on SuSE 7.1 or Redhat
-  //   7.1, in both cases we will get 2G in return value.
-  // 4466587: glibc 2.2.x compiled w/o "--enable-kernel=2.4.0" (RH 7.0,
-  //   SuSE 7.2, Debian) can not handle alternate signal stack correctly
-  //   for initial thread if its stack size exceeds 6M. Cap it at 2M,
-  //   in case other parts in glibc still assumes 2M max stack size.
-  // FIXME: alt signal stack is gone, maybe we can relax this constraint?
-  // Problem still exists RH7.2 (IA64 anyway) but 2MB is a little small
-  if (stack_size > 2 * K * K IA64_ONLY(*2))
-      stack_size = 2 * K * K IA64_ONLY(*2);
   // Try to figure out where the stack base (top) is. This is harder.
   //
   // When an application is started, glibc saves the initial stack pointer in
@@ -1249,14 +1266,18 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   // stack_top could be partially down the page so align it
   stack_top = align_size_up(stack_top, page_size());
 
-  if (max_size && stack_size > max_size) {
-     _initial_thread_stack_size = max_size;
+  // Allowed stack value is minimum of max_size and what we derived from rlimit
+  if (max_size > 0) {
+    _initial_thread_stack_size = MIN2(max_size, stack_size);
   } else {
-     _initial_thread_stack_size = stack_size;
+    // Accept the rlimit max, but if stack is unlimited then it will be huge, so
+    // clamp it at 8MB as we do on Solaris
+    _initial_thread_stack_size = MIN2(stack_size, 8*M);
   }
 
   _initial_thread_stack_size = align_size_down(_initial_thread_stack_size, page_size());
   _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
+  assert(_initial_thread_stack_bottom < (address)stack_top, "overflow!");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2789,11 +2810,15 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // If we are running with earlier version, which did not have symbol versions,
 // we should use the base version.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifndef __UCLIBC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#else
+  return dlsym(handle, name);
+#endif
 }
 
 bool os::Linux::libnuma_init() {
@@ -5016,12 +5041,42 @@ void os::make_polling_page_readable(void) {
   }
 };
 
+static int os_cpu_count(const cpu_set_t* cpus) {
+  int count = 0;
+  // only look up to the number of configured processors
+  for (int i = 0; i < os::processor_count(); i++) {
+    if (CPU_ISSET(i, cpus)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Get the current number of available processors for this process.
+// This value can change at any time during a process's lifetime.
+// sched_getaffinity gives an accurate answer as it accounts for cpusets.
+// If anything goes wrong we fallback to returning the number of online
+// processors - which can be greater than the number available to the process.
 int os::active_processor_count() {
-  // Linux doesn't yet have a (official) notion of processor sets,
-  // so just return the number of online processors.
-  int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
-  assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
-  return online_cpus;
+  cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
+  int cpus_size = sizeof(cpu_set_t);
+  int cpu_count = 0;
+
+  // pid 0 means the current thread - which we have to assume represents the process
+  if (sched_getaffinity(0, cpus_size, &cpus) == 0) {
+    cpu_count = os_cpu_count(&cpus);
+    if (PrintActiveCpus) {
+      tty->print_cr("active_processor_count: sched_getaffinity processor count: %d", cpu_count);
+    }
+  }
+  else {
+    cpu_count = ::sysconf(_SC_NPROCESSORS_ONLN);
+    warning("sched_getaffinity failed (%s)- using online processor count (%d) "
+            "which may exceed available processors", strerror(errno), cpu_count);
+  }
+
+  assert(cpu_count > 0 && cpu_count <= processor_count(), "sanity check");
+  return cpu_count;
 }
 
 void os::set_native_thread_name(const char *name) {
@@ -5546,7 +5601,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+#ifndef __UCLIBC__
   return ::getloadavg(loadavg, nelem);
+#else
+  return -1;
+#endif
 }
 
 void os::pause() {
