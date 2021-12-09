@@ -35,6 +35,9 @@
 #ifdef TARGET_ARCH_x86
 # include "vmreg_x86.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "vmreg_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "vmreg_sparc.inline.hpp"
 #endif
@@ -46,6 +49,10 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmreg_aarch32.inline.hpp"
+# include "vm_version_aarch32.hpp"
 #endif
 
 
@@ -193,10 +200,10 @@ bool LinearScan::is_precolored_cpu_interval(const Interval* i) {
 }
 
 bool LinearScan::is_virtual_cpu_interval(const Interval* i) {
-#if defined(__SOFTFP__) || defined(E500V2)
+#if !defined(AARCH32) && (defined(__SOFTFP__) || defined(E500V2))
   return i->reg_num() >= LIR_OprDesc::vreg_base;
 #else
-  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() != T_FLOAT && i->type() != T_DOUBLE);
+  return i->reg_num() >= LIR_OprDesc::vreg_base && (AARCH32_ONLY(!hasFPU() ||) (i->type() != T_FLOAT && i->type() != T_DOUBLE));
 #endif // __SOFTFP__ or E500V2
 }
 
@@ -205,10 +212,10 @@ bool LinearScan::is_precolored_fpu_interval(const Interval* i) {
 }
 
 bool LinearScan::is_virtual_fpu_interval(const Interval* i) {
-#if defined(__SOFTFP__) || defined(E500V2)
+#if !defined(AARCH32) && (defined(__SOFTFP__) || defined(E500V2))
   return false;
 #else
-  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() == T_FLOAT || i->type() == T_DOUBLE);
+  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() == T_FLOAT || i->type() == T_DOUBLE) AARCH32_ONLY(&& hasFPU());
 #endif // __SOFTFP__ or E500V2
 }
 
@@ -1093,7 +1100,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   }
 
 
-#ifdef X86
+#if defined(X86)
   if (op->code() == lir_cmove) {
     // conditional moves can handle stack operands
     assert(op->result_opr()->is_register(), "result must always be in a register");
@@ -2074,7 +2081,14 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 
 #ifdef __SOFTFP__
       case T_FLOAT:  // fall through
-#endif // __SOFTFP__
+#if defined(AARCH32)
+      if(hasFPU()) {
+        assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_fpu(assigned_reg - pd_first_fpu_reg);
+      }
+#endif
+#endif
       case T_INT: {
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
@@ -2083,7 +2097,15 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 
 #ifdef __SOFTFP__
       case T_DOUBLE:  // fall through
-#endif // __SOFTFP__
+#if defined(AARCH32)
+        if(hasFPU()) {
+            assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
+            assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
+            assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
+            return LIR_OprFact::double_fpu(assigned_reg - pd_first_fpu_reg, interval->assigned_regHi() - pd_first_fpu_reg);
+        }
+#endif
+#endif
       case T_LONG: {
         int assigned_regHi = interval->assigned_regHi();
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
@@ -2138,7 +2160,7 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
         LIR_Opr result = LIR_OprFact::double_fpu(interval->assigned_regHi() - pd_first_fpu_reg, assigned_reg - pd_first_fpu_reg);
-#elif defined(ARM32)
+#elif defined(ARM32) || defined(AARCH32)
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
@@ -2195,7 +2217,7 @@ LIR_Opr LinearScan::color_lir_opr(LIR_Opr opr, int op_id, LIR_OpVisitState::OprM
 
   LIR_Opr res = operand_for_interval(interval);
 
-#ifdef X86
+#if defined(X86) || defined(AARCH64)
   // new semantic for is_last_use: not only set on definite end of interval,
   // but also before hole
   // This may still miss some cases (e.g. for dead values), but it is not necessary that the
@@ -2727,9 +2749,9 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef SPARC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi() + 1, "assumed in calculation (only fpu_regnrHi is used)");
 #endif
-#ifdef ARM32
+#if defined(ARM32) || defined(AARCH32)
       assert(opr->fpu_regnrHi() == opr->fpu_regnrLo() + 1, "assumed in calculation (only fpu_regnrLo is used)");
-#endif
+#endif // ARM32 || AARCH32
 #ifdef PPC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
 #endif
@@ -4538,7 +4560,9 @@ void Interval::print(outputStream* out) const {
       opr = LIR_OprFact::single_xmm(assigned_reg() - pd_first_xmm_reg);
 #endif
     } else {
+#if !defined(AARCH64)
       ShouldNotReachHere();
+#endif
     }
   } else {
     type_name = type2name(type());
@@ -5612,7 +5636,7 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
 }
 
 bool LinearScanWalker::no_allocation_possible(Interval* cur) {
-#ifdef X86
+#if defined(X86)
   // fast calculation of intervals that can never get a register because the
   // the next instruction is a call that blocks all registers
   // Note: this does not work if callee-saved registers are available (e.g. on Sparc)

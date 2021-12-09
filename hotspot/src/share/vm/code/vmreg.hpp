@@ -38,12 +38,16 @@
 # include "adfiles/adGlobals_x86_32.hpp"
 #elif defined TARGET_ARCH_MODEL_x86_64
 # include "adfiles/adGlobals_x86_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch64
+# include "adfiles/adGlobals_aarch64.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "adfiles/adGlobals_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/adGlobals_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/adGlobals_aarch32.hpp"
 #endif
 #endif
 
@@ -156,6 +160,9 @@ public:
 #ifdef TARGET_ARCH_x86
 # include "vmreg_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "vmreg_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "vmreg_sparc.hpp"
 #endif
@@ -167,6 +174,9 @@ public:
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmreg_aarch32.hpp"
 #endif
 
 

@@ -801,6 +801,11 @@ static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
 JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id ))
   NOT_PRODUCT(_patch_code_slowcase_cnt++;)
 
+#ifdef AARCH64
+  // AArch64 does not patch C1-generated code.
+  ShouldNotReachHere();
+#endif
+
   ResourceMark rm(thread);
   RegisterMap reg_map(thread, false);
   frame runtime_frame = thread->last_frame();
@@ -947,7 +952,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   }
 
   // Now copy code back
-
   {
     MutexLockerEx ml_patch (Patching_lock, Mutex::_no_safepoint_check_flag);
     //
@@ -958,7 +962,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       NativeGeneralJump* jump = nativeGeneralJump_at(caller_frame.pc());
       address instr_pc = jump->jump_destination();
       NativeInstruction* ni = nativeInstruction_at(instr_pc);
-      if (ni->is_jump() ) {
+      if (ni->is_jump()) {
         // the jump has not been patched yet
         // The jump destination is slow case and therefore not part of the stubs
         // (stubs are only for StaticCalls)
@@ -1086,7 +1090,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
-#ifdef ARM
+#if defined(ARM) && !defined(AARCH32)
           if((load_klass_or_mirror_patch_id ||
               stub_id == Runtime1::load_appendix_patching_id) &&
               nativeMovConstReg_at(copy_buff)->is_pc_relative()) {
@@ -1155,6 +1159,15 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           }
 #endif
           }
+#ifdef AARCH32
+          // AArch32 have (disabled) relocation for offset, should enable it back
+          if (stub_id == Runtime1::access_field_patching_id) {
+            nmethod* nm = CodeCache::find_nmethod(instr_pc);
+            RelocIterator iter(nm, (address)instr_pc, (address)(instr_pc + 1));
+            relocInfo::change_reloc_info_for_address(&iter, (address) instr_pc,
+                                                     relocInfo::none, relocInfo::section_word_type);
+          }
+#endif
 
         } else {
           ICache::invalidate_range(copy_buff, *byte_count);
@@ -1190,6 +1203,7 @@ JRT_END
 // completes we can check for deoptimization. This simplifies the
 // assembly code in the cpu directories.
 //
+#ifndef TARGET_ARCH_aarch64
 int Runtime1::move_klass_patching(JavaThread* thread) {
 //
 // NOTE: we are still in Java
@@ -1274,7 +1288,7 @@ int Runtime1::access_field_patching(JavaThread* thread) {
 
   return caller_is_deopted();
 JRT_END
-
+#endif
 
 JRT_LEAF(void, Runtime1::trace_block_entry(jint block_id))
   // for now we just print out the block id

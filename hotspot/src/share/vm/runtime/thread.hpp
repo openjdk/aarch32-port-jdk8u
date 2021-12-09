@@ -1043,7 +1043,7 @@ class JavaThread: public Thread {
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
-#ifndef PPC64
+#if !(defined(PPC64) || defined(AARCH64))
   JavaThreadState thread_state() const           { return _thread_state; }
   void set_thread_state(JavaThreadState s)       { _thread_state = s;    }
 #else
@@ -1701,11 +1701,23 @@ public:
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "thread_linux_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "thread_linux_aarch64.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_sparc
 # include "thread_linux_sparc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "thread_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "thread_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "thread_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "thread_linux_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "thread_solaris_x86.hpp"
@@ -1715,12 +1727,6 @@ public:
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "thread_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "thread_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "thread_linux_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "thread_aix_ppc.hpp"

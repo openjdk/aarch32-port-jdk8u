@@ -190,6 +190,9 @@ class TemplateInterpreter: public AbstractInterpreter {
 #ifdef TARGET_ARCH_x86
 # include "templateInterpreter_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "templateInterpreter_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "templateInterpreter_sparc.hpp"
 #endif
@@ -201,6 +204,9 @@ class TemplateInterpreter: public AbstractInterpreter {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "templateInterpreter_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "templateInterpreter_aarch32.hpp"
 #endif
 
 
