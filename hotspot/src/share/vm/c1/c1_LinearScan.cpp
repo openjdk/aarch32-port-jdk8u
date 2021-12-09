@@ -47,6 +47,10 @@
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmreg_aarch32.inline.hpp"
+# include "vm_version_aarch32.hpp"
+#endif
 
 
 #ifndef PRODUCT
@@ -193,10 +197,10 @@ bool LinearScan::is_precolored_cpu_interval(const Interval* i) {
 }
 
 bool LinearScan::is_virtual_cpu_interval(const Interval* i) {
-#if defined(__SOFTFP__) || defined(E500V2)
+#if !defined(AARCH32) && (defined(__SOFTFP__) || defined(E500V2))
   return i->reg_num() >= LIR_OprDesc::vreg_base;
 #else
-  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() != T_FLOAT && i->type() != T_DOUBLE);
+  return i->reg_num() >= LIR_OprDesc::vreg_base && (AARCH32_ONLY(!hasFPU() ||) (i->type() != T_FLOAT && i->type() != T_DOUBLE));
 #endif // __SOFTFP__ or E500V2
 }
 
@@ -205,10 +209,10 @@ bool LinearScan::is_precolored_fpu_interval(const Interval* i) {
 }
 
 bool LinearScan::is_virtual_fpu_interval(const Interval* i) {
-#if defined(__SOFTFP__) || defined(E500V2)
+#if !defined(AARCH32) && (defined(__SOFTFP__) || defined(E500V2))
   return false;
 #else
-  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() == T_FLOAT || i->type() == T_DOUBLE);
+  return i->reg_num() >= LIR_OprDesc::vreg_base && (i->type() == T_FLOAT || i->type() == T_DOUBLE) AARCH32_ONLY(&& hasFPU());
 #endif // __SOFTFP__ or E500V2
 }
 
@@ -2074,7 +2078,14 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 
 #ifdef __SOFTFP__
       case T_FLOAT:  // fall through
-#endif // __SOFTFP__
+#if defined(AARCH32)
+      if(hasFPU()) {
+        assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_fpu(assigned_reg - pd_first_fpu_reg);
+      }
+#endif
+#endif
       case T_INT: {
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
@@ -2083,7 +2094,15 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 
 #ifdef __SOFTFP__
       case T_DOUBLE:  // fall through
-#endif // __SOFTFP__
+#if defined(AARCH32)
+        if(hasFPU()) {
+            assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
+            assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
+            assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
+            return LIR_OprFact::double_fpu(assigned_reg - pd_first_fpu_reg, interval->assigned_regHi() - pd_first_fpu_reg);
+        }
+#endif
+#endif
       case T_LONG: {
         int assigned_regHi = interval->assigned_regHi();
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
@@ -2138,7 +2157,7 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
         LIR_Opr result = LIR_OprFact::double_fpu(interval->assigned_regHi() - pd_first_fpu_reg, assigned_reg - pd_first_fpu_reg);
-#elif defined(ARM32)
+#elif defined(ARM32) || defined(AARCH32)
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
@@ -2727,9 +2746,9 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef SPARC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi() + 1, "assumed in calculation (only fpu_regnrHi is used)");
 #endif
-#ifdef ARM32
+#if defined(ARM32) || defined(AARCH32)
       assert(opr->fpu_regnrHi() == opr->fpu_regnrLo() + 1, "assumed in calculation (only fpu_regnrLo is used)");
-#endif
+#endif // ARM32 || AARCH32
 #ifdef PPC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
 #endif

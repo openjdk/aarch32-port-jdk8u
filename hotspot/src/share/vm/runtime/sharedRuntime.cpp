@@ -78,6 +78,10 @@
 # include "nativeInst_ppc.hpp"
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "nativeInst_aarch32.hpp"
+# include "vmreg_aarch32.inline.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -1041,7 +1045,7 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
   // last java frame on stack (which includes native call frames)
   vframeStream vfst(thread, true);  // Do not skip and javaCalls
 
-  return find_callee_info_helper(thread, vfst, bc, callinfo, CHECK_(Handle()));
+  return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
 }
 
 
