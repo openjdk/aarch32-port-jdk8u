@@ -65,6 +65,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmreg_aarch32.inline.hpp"
+#endif
 #ifdef COMPILER2
 #if defined AD_MD_HPP
 # include AD_MD_HPP
@@ -78,6 +81,8 @@
 # include "adfiles/ad_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/ad_aarch32.hpp"
 #endif
 #endif // COMPILER2
 
@@ -1881,8 +1886,6 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                        trap_reason_name(reason),
                        recomp_flag ? " recompiled" : "");
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 
@@ -1952,8 +1955,6 @@ const char* Deoptimization::format_trap_request(char* buf, size_t buflen,
     len = jio_snprintf(buf, buflen, "reason='%s' action='%s' index='%d'",
                        reason, action, unloaded_class_index);
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 
