@@ -107,6 +107,9 @@
 #ifdef TARGET_ARCH_x86
 # include "vmStructs_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "vmStructs_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "vmStructs_sparc.hpp"
 #endif
@@ -119,14 +122,29 @@
 #ifdef TARGET_ARCH_ppc
 # include "vmStructs_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmStructs_aarch32.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "vmStructs_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "vmStructs_linux_aarch64.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_sparc
 # include "vmStructs_linux_sparc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "vmStructs_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "vmStructs_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "vmStructs_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "vmStructs_linux_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "vmStructs_solaris_x86.hpp"
@@ -136,12 +154,6 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "vmStructs_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "vmStructs_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "vmStructs_linux_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "vmStructs_aix_ppc.hpp"
@@ -194,12 +206,16 @@
 # include "adfiles/adGlobals_x86_32.hpp"
 #elif defined TARGET_ARCH_MODEL_x86_64
 # include "adfiles/adGlobals_x86_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch64
+# include "adfiles/adGlobals_aarch64.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "adfiles/adGlobals_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/adGlobals_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/adGlobals_aarch32.hpp"
 #endif
 #endif // COMPILER2
 
