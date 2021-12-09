@@ -34,6 +34,9 @@
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "jniTypes_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "jniTypes_sparc.hpp"
 #endif
@@ -45,6 +48,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "jniTypes_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "jniTypes_aarch32.hpp"
 #endif
 #ifdef TARGET_ARCH_zero
 # include "entryFrame_zero.hpp"
@@ -97,6 +103,9 @@ inline oop* frame::interpreter_frame_temp_oop_addr() const {
 #ifdef TARGET_ARCH_x86
 # include "frame_x86.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "frame_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "frame_sparc.inline.hpp"
 #endif
@@ -108,6 +117,9 @@ inline oop* frame::interpreter_frame_temp_oop_addr() const {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "frame_ppc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "frame_aarch32.inline.hpp"
 #endif
 
 

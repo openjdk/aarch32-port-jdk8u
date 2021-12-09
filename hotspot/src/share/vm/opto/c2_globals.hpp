@@ -29,6 +29,9 @@
 #ifdef TARGET_ARCH_x86
 # include "c2_globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c2_globals_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "c2_globals_sparc.hpp"
 #endif
@@ -37,6 +40,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c2_globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c2_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"

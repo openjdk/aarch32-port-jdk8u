@@ -292,6 +292,9 @@ class Bytecodes: AllStatic {
 #ifdef TARGET_ARCH_x86
 # include "bytecodes_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytecodes_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "bytecodes_sparc.hpp"
 #endif
@@ -303,6 +306,9 @@ class Bytecodes: AllStatic {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "bytecodes_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytecodes_aarch32.hpp"
 #endif
 
 
