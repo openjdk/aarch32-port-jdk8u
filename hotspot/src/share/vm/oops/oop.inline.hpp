@@ -57,6 +57,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytes_aarch32.hpp"
+#endif
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
@@ -103,16 +106,32 @@ inline narrowKlass* oopDesc::compressed_klass_addr() {
   return &_metadata._compressed_klass;
 }
 
+#define CHECK_SET_KLASS(k)                                                \
+  do {                                                                    \
+    assert(Universe::is_bootstrapping() || k != NULL, "NULL Klass");      \
+    assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass"); \
+  } while (0)
+
 inline void oopDesc::set_klass(Klass* k) {
-  // since klasses are promoted no store check is needed
-  assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
-  assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
+  CHECK_SET_KLASS(k);
   if (UseCompressedClassPointers) {
     *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {
     *klass_addr() = k;
   }
 }
+
+inline void oopDesc::release_set_klass(Klass* k) {
+  CHECK_SET_KLASS(k);
+  if (UseCompressedClassPointers) {
+    OrderAccess::release_store(compressed_klass_addr(),
+                               Klass::encode_klass_not_null(k));
+  } else {
+    OrderAccess::release_store_ptr(klass_addr(), k);
+  }
+}
+
+#undef CHECK_SET_KLASS
 
 inline int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
