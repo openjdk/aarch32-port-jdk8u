@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vmreg_aarch32.inline.hpp"
+#endif
 #ifdef COMPILER2
 #if defined AD_MD_HPP
 # include AD_MD_HPP
@@ -78,6 +81,8 @@
 # include "adfiles/ad_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/ad_aarch32.hpp"
 #endif
 #endif // COMPILER2
 
@@ -847,13 +852,25 @@ public:
       _obj->int_field_put(offset, (jint)*((jint*)&val));
       break;
 
-    case T_SHORT: case T_CHAR: // 2 bytes
+    case T_SHORT:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       _obj->short_field_put(offset, (jshort)*((jint*)&val));
       break;
 
-    case T_BOOLEAN: case T_BYTE: // 1 byte
+    case T_CHAR:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      _obj->char_field_put(offset, (jchar)*((jint*)&val));
+      break;
+
+    case T_BYTE:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      _obj->byte_field_put(offset, (jbyte)*((jint*)&val));
+      break;
+
+    case T_BOOLEAN:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       _obj->bool_field_put(offset, (jboolean)*((jint*)&val));
@@ -899,13 +916,25 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       obj->int_at_put(index, (jint)*((jint*)&val));
       break;
 
-    case T_SHORT: case T_CHAR: // 2 bytes
+    case T_SHORT:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       obj->short_at_put(index, (jshort)*((jint*)&val));
       break;
 
-    case T_BOOLEAN: case T_BYTE: // 1 byte
+    case T_CHAR:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->char_at_put(index, (jchar)*((jint*)&val));
+      break;
+
+    case T_BYTE:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->byte_at_put(index, (jbyte)*((jint*)&val));
+      break;
+
+    case T_BOOLEAN:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       obj->bool_at_put(index, (jboolean)*((jint*)&val));
