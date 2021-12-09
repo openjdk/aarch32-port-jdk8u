@@ -47,6 +47,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "depChecker_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "depChecker_aarch32.hpp"
+#endif
 #ifdef SHARK
 #include "shark/sharkEntry.hpp"
 #endif
@@ -251,7 +254,6 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _output(output ? output : tty),
   _start(NULL),
   _end(NULL),
-  _option_buf(),
   _print_raw(0),
   // by default, output pc but not bytes:
   _print_pc(true),
