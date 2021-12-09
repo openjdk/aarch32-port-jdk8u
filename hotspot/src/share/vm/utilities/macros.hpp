@@ -354,6 +354,14 @@
 #define NOT_AMD64(code) code
 #endif
 
+#ifdef AARCH64
+#define AARCH64_ONLY(code) code
+#define NOT_AARCH64(code)
+#else
+#define AARCH64_ONLY(code)
+#define NOT_AARCH64(code) code
+#endif
+
 #ifdef SPARC
 #define SPARC_ONLY(code) code
 #define NOT_SPARC(code)
@@ -412,6 +420,14 @@
 #else
 #define ARM32_ONLY(code)
 #define NOT_ARM32(code) code
+#endif
+
+#ifdef AARCH32
+#define AARCH32_ONLY(code) code
+#define NOT_AARCH32(code)
+#else
+#define AARCH32_ONLY(code)
+#define NOT_AARCH32(code) code
 #endif
 
 #ifdef JAVASE_EMBEDDED

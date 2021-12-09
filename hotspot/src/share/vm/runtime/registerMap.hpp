@@ -30,6 +30,9 @@
 #ifdef TARGET_ARCH_x86
 # include "register_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "register_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "register_sparc.hpp"
 #endif
@@ -41,6 +44,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "register_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "register_aarch32.hpp"
 #endif
 
 class JavaThread;
@@ -138,6 +144,9 @@ class RegisterMap : public StackObj {
 #ifdef TARGET_ARCH_x86
 # include "registerMap_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "registerMap_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "registerMap_sparc.hpp"
 #endif
@@ -149,6 +158,9 @@ class RegisterMap : public StackObj {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "registerMap_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "registerMap_aarch32.hpp"
 #endif
 
 };

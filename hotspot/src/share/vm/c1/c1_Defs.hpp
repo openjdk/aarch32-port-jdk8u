@@ -29,6 +29,9 @@
 #ifdef TARGET_ARCH_x86
 # include "register_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "register_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "register_sparc.hpp"
 #endif
@@ -40,6 +43,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "register_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "register_aarch32.hpp"
 #endif
 
 // set frame size and return address offset to these values in blobs
@@ -53,6 +59,9 @@ enum {
 #ifdef TARGET_ARCH_x86
 # include "c1_Defs_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c1_Defs_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "c1_Defs_sparc.hpp"
 #endif
@@ -61,6 +70,9 @@ enum {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c1_Defs_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c1_Defs_aarch32.hpp"
 #endif
 
 

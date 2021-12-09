@@ -40,6 +40,9 @@
 #ifdef TARGET_ARCH_x86
 # include "globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "globals_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "globals_sparc.hpp"
 #endif
@@ -51,6 +54,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "globals_linux.hpp"
@@ -70,11 +76,23 @@
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "globals_linux_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "globals_linux_aarch64.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_sparc
 # include "globals_linux_sparc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "globals_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "globals_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "globals_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "globals_linux_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_solaris_x86
 # include "globals_solaris_x86.hpp"
@@ -84,12 +102,6 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "globals_windows_x86.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "globals_linux_arm.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "globals_linux_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_aix_ppc
 # include "globals_aix_ppc.hpp"
@@ -104,6 +116,9 @@
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c1_globals_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "c1_globals_sparc.hpp"
 #endif
@@ -112,6 +127,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c1_globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c1_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c1_globals_linux.hpp"
@@ -133,6 +151,9 @@
 #ifdef TARGET_ARCH_x86
 # include "c2_globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "c2_globals_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "c2_globals_sparc.hpp"
 #endif
@@ -141,6 +162,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "c2_globals_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c2_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"
@@ -528,8 +552,9 @@ class CommandLineFlags {
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
+  NOT_AARCH32(                                                              \
   product_pd(bool, UseMembar,                                               \
-          "(Unstable) Issues membars on thread state transitions")          \
+          "(Unstable) Issues membars on thread state transitions"))         \
                                                                             \
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
@@ -3864,7 +3889,7 @@ class CommandLineFlags {
   product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
           "Size of the shared miscellaneous data area (in bytes)")          \
                                                                             \
-  product(uintx, SharedMiscCodeSize,    120*K,                              \
+  product(uintx, SharedMiscCodeSize,    AARCH64_ONLY(192*K) NOT_AARCH64(120*K), \
           "Size of the shared miscellaneous code area (in bytes)")          \
                                                                             \
   product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \

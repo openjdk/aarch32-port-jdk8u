@@ -27,6 +27,9 @@
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "jniTypes_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "jniTypes_sparc.hpp"
 #endif
@@ -38,6 +41,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "jniTypes_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "jniTypes_aarch32.hpp"
 #endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC

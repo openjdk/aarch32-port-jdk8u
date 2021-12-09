@@ -35,6 +35,9 @@
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytes_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "bytes_sparc.hpp"
 #endif
@@ -46,6 +49,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytes_aarch32.hpp"
 #endif
 
 #ifdef CC_INTERP
@@ -589,6 +595,9 @@ void print();
 #ifdef TARGET_ARCH_x86
 # include "bytecodeInterpreter_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytecodeInterpreter_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "bytecodeInterpreter_sparc.hpp"
 #endif
@@ -600,6 +609,9 @@ void print();
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "bytecodeInterpreter_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytecodeInterpreter_aarch32.hpp"
 #endif
 
 

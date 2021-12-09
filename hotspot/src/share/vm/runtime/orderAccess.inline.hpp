@@ -41,8 +41,14 @@
 #ifdef TARGET_OS_ARCH_linux_arm
 # include "orderAccess_linux_arm.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_aarch64
+# include "orderAccess_linux_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "orderAccess_linux_ppc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "orderAccess_linux_aarch32.inline.hpp"
 #endif
 
 // Solaris

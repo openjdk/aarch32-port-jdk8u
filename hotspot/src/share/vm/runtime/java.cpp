@@ -69,6 +69,9 @@
 #ifdef TARGET_ARCH_x86
 # include "vm_version_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "vm_version_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "vm_version_sparc.hpp"
 #endif
@@ -80,6 +83,9 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "vm_version_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "vm_version_aarch32.hpp"
 #endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
