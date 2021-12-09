@@ -74,7 +74,8 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
       LinuxNativeDispatcher.c \
       LinuxWatchService.c \
       UnixCopyFile.c \
-      UnixNativeDispatcher.c
+      UnixNativeDispatcher.c \
+      UnixConstants.c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
@@ -172,6 +173,9 @@ ifeq ($(OPENJDK_TARGET_OS_API), posix)
     # Suppress unused parameters required by exported JNI functions.
     SCTP_WERROR := -Werror -Wno-error=unused-parameter
     ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
+      SCTP_WERROR :=
+    endif
+    ifeq ($(OPENJDK_TARGET_CPU_ARCH), aarch32)
       SCTP_WERROR :=
     endif
 
