@@ -152,10 +152,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
   AC_SUBST(JVM_VARIANT_CORE)
 
   INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+  if test "x$JVM_VARIANT_ZERO" = xtrue; then
     INCLUDE_SA=false
   fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch32; then
     INCLUDE_SA=false
   fi
   if test "x$VAR_CPU" = xppc64 -o "x$VAR_CPU" = xppc64le ; then
