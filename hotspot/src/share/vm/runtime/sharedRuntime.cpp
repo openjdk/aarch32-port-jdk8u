@@ -78,6 +78,10 @@
 # include "nativeInst_ppc.hpp"
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "nativeInst_aarch32.hpp"
+# include "vmreg_aarch32.inline.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -1231,6 +1235,14 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
     tty->print_cr(" at pc: " INTPTR_FORMAT " to code: " INTPTR_FORMAT, caller_frame.pc(), callee_method->code());
   }
 #endif
+
+  // Do not patch call site for static call when the class is not
+  // fully initialized.
+  if (invoke_code == Bytecodes::_invokestatic &&
+      !callee_method->method_holder()->is_initialized()) {
+    assert(callee_method->method_holder()->is_linked(), "must be");
+    return callee_method;
+  }
 
   // JSR 292 key invariant:
   // If the resolved method is a MethodHandle invoke target, the call
