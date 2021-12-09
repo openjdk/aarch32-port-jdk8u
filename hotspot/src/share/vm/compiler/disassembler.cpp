@@ -50,6 +50,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "depChecker_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "depChecker_aarch32.hpp"
+#endif
 #ifdef SHARK
 #include "shark/sharkEntry.hpp"
 #endif
@@ -504,6 +507,7 @@ address decode_env::decode_instructions(address start, address end) {
 
 
 void Disassembler::decode(CodeBlob* cb, outputStream* st) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   decode_env env(cb, st);
   env.output()->print_cr("Decoding CodeBlob " PTR_FORMAT, cb);
@@ -511,12 +515,14 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 }
 
 void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   decode_env env(CodeCache::find_blob_unsafe(start), st, c);
   env.decode_instructions(start, end);
 }
 
 void Disassembler::decode(nmethod* nm, outputStream* st) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   decode_env env(nm, st);
   env.output()->print_cr("Decoding compiled method " PTR_FORMAT ":", nm);
