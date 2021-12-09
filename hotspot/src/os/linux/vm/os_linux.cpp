@@ -37,6 +37,7 @@
 #include "mutex_linux.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_linux.hpp"
+#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
@@ -94,7 +95,9 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
+#ifndef __UCLIBC__
 # include <gnu/libc-version.h>
+#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -179,13 +182,62 @@ julong os::available_memory() {
 julong os::Linux::available_memory() {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  sysinfo(&si);
+  julong avail_mem;
 
-  return (julong)si.freeram * si.mem_unit;
+  if (OSContainer::is_containerized()) {
+    jlong mem_limit, mem_usage;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
+      if (PrintContainerInfo) {
+        tty->print_cr("container memory limit %s: " JLONG_FORMAT ", using host value",
+                       mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
+      }
+    }
+
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
+      if (PrintContainerInfo) {
+        tty->print_cr("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+      }
+    }
+
+    if (mem_limit > 0 && mem_usage > 0 ) {
+      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      if (PrintContainerInfo) {
+        tty->print_cr("available container memory: " JULONG_FORMAT, avail_mem);
+      }
+      return avail_mem;
+    }
+  }
+
+  sysinfo(&si);
+  avail_mem = (julong)si.freeram * si.mem_unit;
+  if (Verbose) {
+    tty->print_cr("available memory: " JULONG_FORMAT, avail_mem);
+  }
+  return avail_mem;
 }
 
 julong os::physical_memory() {
-  return Linux::physical_memory();
+  jlong phys_mem = 0;
+  if (OSContainer::is_containerized()) {
+    jlong mem_limit;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
+      if (PrintContainerInfo) {
+        tty->print_cr("total container memory: " JLONG_FORMAT, mem_limit);
+      }
+      return mem_limit;
+    }
+
+    if (PrintContainerInfo) {
+      tty->print_cr("container memory limit %s: " JLONG_FORMAT ", using host value",
+                     mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
+    }
+  }
+
+  phys_mem = Linux::physical_memory();
+  if (Verbose) {
+    tty->print_cr("total system memory: " JLONG_FORMAT, phys_mem);
+  }
+  return phys_mem;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -547,11 +599,17 @@ void os::Linux::libpthread_init() {
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
+#ifndef __UCLIBC__
      // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
      static char _gnu_libc_version[32];
      jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
               "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
      os::Linux::set_glibc_version(_gnu_libc_version);
+#else
+#define STRFY(s) #s
+     os::Linux::set_glibc_version("uclibc " STRFY(__UCLIB_MAJOR__) "." STRFY(__UCLIBC_MINOR__) " stable");
+#undef STRFY
+#endif
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -2114,6 +2172,8 @@ void os::print_os_info(outputStream* st) {
   os::Posix::print_load_average(st);
 
   os::Linux::print_full_memory_info(st);
+
+  os::Linux::print_container_info(st);
 }
 
 // Try to identify popular distros.
@@ -2177,6 +2237,57 @@ void os::Linux::print_full_memory_info(outputStream* st) {
    st->print("\n/proc/meminfo:\n");
    _print_ascii_file("/proc/meminfo", st);
    st->cr();
+}
+
+void os::Linux::print_container_info(outputStream* st) {
+if (!OSContainer::is_containerized()) {
+    return;
+  }
+
+  st->print("container (cgroup) information:\n");
+
+  const char *p_ct = OSContainer::container_type();
+  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "failed");
+
+  char *p = OSContainer::cpu_cpuset_cpus();
+  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  p = OSContainer::cpu_cpuset_memory_nodes();
+  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  int i = OSContainer::active_processor_count();
+  if (i > 0) {
+    st->print("active_processor_count: %d\n", i);
+  } else {
+    st->print("active_processor_count: failed\n");
+  }
+
+  i = OSContainer::cpu_quota();
+  st->print("cpu_quota: %d\n", i);
+
+  i = OSContainer::cpu_period();
+  st->print("cpu_period: %d\n", i);
+
+  i = OSContainer::cpu_shares();
+  st->print("cpu_shares: %d\n", i);
+
+  jlong j = OSContainer::memory_limit_in_bytes();
+  st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_and_swap_limit_in_bytes();
+  st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_soft_limit_in_bytes();
+  st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_usage_in_bytes();
+  st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_max_usage_in_bytes();
+  st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2822,11 +2933,15 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifndef __UCLIBC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#else
+  return dlsym(handle, name);
+#endif
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
@@ -4951,6 +5066,10 @@ extern "C" {
   }
 }
 
+void os::pd_init_container_support() {
+  OSContainer::init();
+}
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void)
 {
@@ -5131,7 +5250,7 @@ static int os_cpu_count(const cpu_set_t* cpus) {
 // sched_getaffinity gives an accurate answer as it accounts for cpusets.
 // If anything goes wrong we fallback to returning the number of online
 // processors - which can be greater than the number available to the process.
-int os::active_processor_count() {
+int os::Linux::active_processor_count() {
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   int cpus_size = sizeof(cpu_set_t);
   int cpu_count = 0;
@@ -5149,8 +5268,46 @@ int os::active_processor_count() {
             "which may exceed available processors", strerror(errno), cpu_count);
   }
 
-  assert(cpu_count > 0 && cpu_count <= processor_count(), "sanity check");
+  assert(cpu_count > 0 && cpu_count <= os::processor_count(), "sanity check");
   return cpu_count;
+}
+
+// Determine the active processor count from one of
+// three different sources:
+//
+// 1. User option -XX:ActiveProcessorCount
+// 2. kernel os calls (sched_getaffinity or sysconf(_SC_NPROCESSORS_ONLN)
+// 3. extracted from cgroup cpu subsystem (shares and quotas)
+//
+// Option 1, if specified, will always override.
+// If the cgroup subsystem is active and configured, we
+// will return the min of the cgroup and option 2 results.
+// This is required since tools, such as numactl, that
+// alter cpu affinity do not update cgroup subsystem
+// cpuset configuration files.
+int os::active_processor_count() {
+  // User has overridden the number of active processors
+  if (ActiveProcessorCount > 0) {
+    if (PrintActiveCpus) {
+      tty->print_cr("active_processor_count: "
+                    "active processor count set by user : %d",
+                    ActiveProcessorCount);
+    }
+    return ActiveProcessorCount;
+  }
+
+  int active_cpus;
+  if (OSContainer::is_containerized()) {
+    active_cpus = OSContainer::active_processor_count();
+    if (PrintActiveCpus) {
+      tty->print_cr("active_processor_count: determined by OSContainer: %d",
+                     active_cpus);
+    }
+  } else {
+    active_cpus = os::Linux::active_processor_count();
+  }
+
+  return active_cpus;
 }
 
 void os::set_native_thread_name(const char *name) {
@@ -5675,7 +5832,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+#ifndef __UCLIBC__
   return ::getloadavg(loadavg, nelem);
+#else
+  return -1;
+#endif
 }
 
 void os::pause() {
