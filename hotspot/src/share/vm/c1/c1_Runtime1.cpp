@@ -962,7 +962,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       NativeGeneralJump* jump = nativeGeneralJump_at(caller_frame.pc());
       address instr_pc = jump->jump_destination();
       NativeInstruction* ni = nativeInstruction_at(instr_pc);
-      if (ni->is_jump() ) {
+      if (ni->is_jump()) {
         // the jump has not been patched yet
         // The jump destination is slow case and therefore not part of the stubs
         // (stubs are only for StaticCalls)
@@ -1091,7 +1091,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
-#ifdef ARM
+#if defined(ARM) && !defined(AARCH32)
           if((load_klass_or_mirror_patch_id ||
               stub_id == Runtime1::load_appendix_patching_id) &&
               nativeMovConstReg_at(copy_buff)->is_pc_relative()) {
@@ -1160,6 +1160,15 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           }
 #endif
           }
+#ifdef AARCH32
+          // AArch32 have (disabled) relocation for offset, should enable it back
+          if (stub_id == Runtime1::access_field_patching_id) {
+            nmethod* nm = CodeCache::find_nmethod(instr_pc);
+            RelocIterator iter(nm, (address)instr_pc, (address)(instr_pc + 1));
+            relocInfo::change_reloc_info_for_address(&iter, (address) instr_pc,
+                                                     relocInfo::none, relocInfo::section_word_type);
+          }
+#endif
 
         } else {
           ICache::invalidate_range(copy_buff, *byte_count);
