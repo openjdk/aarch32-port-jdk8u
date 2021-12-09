@@ -41,6 +41,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "vm_version_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "vm_version_aarch32.hpp"
+#endif
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
@@ -89,6 +92,7 @@ void Abstract_VM_Version::initialize() {
   char* vm_major_ver = vm_version;
   assert(isdigit(vm_major_ver[0]),"wrong vm major version number");
   char* vm_minor_ver = strchr(vm_major_ver, '.');
+  fprintf(stderr, "vm_version=%s\n", vm_version);
   assert(vm_minor_ver != NULL && isdigit(vm_minor_ver[1]),"wrong vm minor version number");
   vm_minor_ver[0] = '\0'; // terminate vm_major_ver
   vm_minor_ver += 1;
@@ -194,6 +198,8 @@ const char* Abstract_VM_Version::jre_release_version() {
 #define CPU      IA32_ONLY("x86")                \
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
+                 PPC64_ONLY("ppc64")             \
+                 AARCH32_ONLY("aarch32")         \
                  SPARC_ONLY("sparc")
 #endif // ZERO
 #endif
