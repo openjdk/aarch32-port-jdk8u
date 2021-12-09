@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,14 @@ ifneq (,$(findstring $(ARCH), ppc ppc64))
     VM_PLATFORM      = linux_ppc
   endif
   HS_ARCH = ppc
+endif
+
+# AArch32
+ifeq ($(ARCH), aarch32)
+  ARCH_DATA_MODEL  = 32
+  PLATFORM         = linux-aarch32
+  VM_PLATFORM      = linux_aarch32
+  HS_ARCH          = aarch32
 endif
 
 # AARCH64
@@ -314,11 +322,13 @@ ADD_SA_BINARIES/aarch64 = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifneq ($(STRIP_POLICY),no_strip)
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      ADD_SA_BINARIES/x86   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
-      ADD_SA_BINARIES/sparc += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/x86     += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/sparc   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/aarch64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
     else
-      ADD_SA_BINARIES/x86   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
-      ADD_SA_BINARIES/sparc += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+      ADD_SA_BINARIES/x86     += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+      ADD_SA_BINARIES/sparc   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+      ADD_SA_BINARIES/aarch64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
     endif
   endif
 endif
