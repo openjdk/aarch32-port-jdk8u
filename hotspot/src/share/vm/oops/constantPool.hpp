@@ -47,6 +47,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytes_aarch32.hpp"
+#endif
 
 // A constantPool is an array containing class constants as described in the
 // class file.
@@ -350,7 +353,7 @@ class ConstantPool : public Metadata {
 
   Klass* klass_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return klass_at_impl(h_this, which, CHECK_NULL);
+    return klass_at_impl(h_this, which, THREAD);
   }
 
   Symbol* klass_name_at(int which) const;  // Returns the name, w/o resolving.
