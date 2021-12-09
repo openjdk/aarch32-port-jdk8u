@@ -74,12 +74,16 @@
 # include "adfiles/ad_x86_32.hpp"
 #elif defined TARGET_ARCH_MODEL_x86_64
 # include "adfiles/ad_x86_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch64
+# include "adfiles/ad_aarch64.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "adfiles/ad_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
 # include "adfiles/ad_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/ad_aarch32.hpp"
 #endif
 
 
@@ -1056,7 +1060,7 @@ const TypeFunc* OptoRuntime::montgomeryMultiply_Type() {
     fields[argp++] = TypeLong::LONG;    // len
     fields[argp++] = TypeLong::HALF;    // placeholder
   } else {
-    fields[argp++] = TypeInt::INT;      // len
+  fields[argp++] = TypeInt::INT;        // len
   }
   fields[argp++] = TypeLong::LONG;      // inv
   fields[argp++] = Type::HALF;
@@ -1087,7 +1091,7 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
     fields[argp++] = TypeLong::LONG;    // len
     fields[argp++] = TypeLong::HALF;    // placeholder
   } else {
-    fields[argp++] = TypeInt::INT;      // len
+  fields[argp++] = TypeInt::INT;        // len
   }
   fields[argp++] = TypeLong::LONG;      // inv
   fields[argp++] = Type::HALF;

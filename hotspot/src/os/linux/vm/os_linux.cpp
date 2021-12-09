@@ -95,7 +95,9 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
+#ifndef __UCLIBC__
 # include <gnu/libc-version.h>
+#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -598,11 +600,17 @@ void os::Linux::libpthread_init() {
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
+#ifndef __UCLIBC__
      // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
      static char _gnu_libc_version[32];
      jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
               "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
      os::Linux::set_glibc_version(_gnu_libc_version);
+#else
+#define STRFY(s) #s
+     os::Linux::set_glibc_version("uclibc " STRFY(__UCLIB_MAJOR__) "." STRFY(__UCLIBC_MINOR__) " stable");
+#undef STRFY
+#endif
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -1418,8 +1426,8 @@ void os::Linux::clock_init() {
 
 #ifndef SYS_clock_getres
 
-#if defined(IA32) || defined(AMD64)
-#define SYS_clock_getres IA32_ONLY(266)  AMD64_ONLY(229)
+#if defined(IA32) || defined(AMD64) || defined(AARCH64)
+#define SYS_clock_getres IA32_ONLY(266)  AMD64_ONLY(229) AARCH64_ONLY(114)
 #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
 #else
 #warning "SYS_clock_getres not defined for this platform, disabling fast_thread_cpu_time"
@@ -2010,7 +2018,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     static  Elf32_Half running_arch_code=EM_AARCH64;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64
   #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -2949,12 +2957,7 @@ int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;
   int retval = -1;
 
-#if defined(IA32)
-# ifndef SYS_getcpu
-# define SYS_getcpu 318
-# endif
-  retval = syscall(SYS_getcpu, &cpu, NULL, NULL);
-#elif defined(AMD64)
+#if defined(AMD64)
 // Unfortunately we have to bring all these macros here from vsyscall.h
 // to be able to compile on old linuxes.
 # define __NR_vgetcpu 2
@@ -2964,6 +2967,11 @@ int os::Linux::sched_getcpu_syscall(void) {
   typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
   vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
   retval = vgetcpu(&cpu, NULL, NULL);
+#elif defined(IA32) || defined(AARCH64)
+# ifndef SYS_getcpu
+#  define SYS_getcpu AARCH64_ONLY(168) IA32_ONLY(318)
+# endif
+  retval = syscall(SYS_getcpu, &cpu, NULL, NULL);
 #endif
 
   return (retval == -1) ? retval : cpu;
@@ -2977,11 +2985,15 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+#ifndef __UCLIBC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+#else
+  return dlsym(handle, name);
+#endif
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
@@ -3517,7 +3529,7 @@ size_t os::Linux::find_large_page_size() {
 
 #ifndef ZERO
   large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
-                     ARM_ONLY(2 * M) PPC_ONLY(4 * M);
+                     ARM_ONLY(2 * M) PPC_ONLY(4 * M) AARCH64_ONLY(2 * M);
 #endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");
@@ -5801,7 +5813,6 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  static bool proc_task_unchecked = true;
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -5814,24 +5825,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
-  snprintf(proc_name, 64, "/proc/%d/stat", tid);
-
-  // The /proc/<tid>/stat aggregates per-process usage on
-  // new Linux kernels 2.6+ where NPTL is supported.
-  // The /proc/self/task/<tid>/stat still has the per-thread usage.
-  // See bug 6328462.
-  // There possibly can be cases where there is no directory
-  // /proc/self/task, so we check its availability.
-  if (proc_task_unchecked && os::Linux::is_NPTL()) {
-    // This is executed only once
-    proc_task_unchecked = false;
-    fp = fopen("/proc/self/task", "r");
-    if (fp != NULL) {
-      snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
-      fclose(fp);
-    }
-  }
-
+  snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
   fp = fopen(proc_name, "r");
   if ( fp == NULL ) return -1;
   statlen = fread(stat, 1, 2047, fp);
@@ -5885,7 +5879,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+#ifndef __UCLIBC__
   return ::getloadavg(loadavg, nelem);
+#else
+  return -1;
+#endif
 }
 
 void os::pause() {
