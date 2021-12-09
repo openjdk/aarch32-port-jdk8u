@@ -50,6 +50,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytes_aarch32.hpp"
+#endif
 
 #ifdef CC_INTERP
 
@@ -606,6 +609,9 @@ void print();
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "bytecodeInterpreter_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytecodeInterpreter_aarch32.hpp"
 #endif
 
 
