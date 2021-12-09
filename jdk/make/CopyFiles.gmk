@@ -307,9 +307,15 @@ else
   ifeq ($(CLIENT_AND_SERVER), true)
     COPY_JVM_CFG_FILE := true
   else
-    # For zero, the default jvm.cfg file is sufficient
+    # For zero, the default jvm.cfg file is sufficient.
     ifeq ($(JVM_VARIANT_ZERO), true)
       COPY_JVM_CFG_FILE := true
+    else
+      ifeq ($(OPENJDK_TARGET_CPU), aarch32)
+        ifeq ($(JVM_VARIANT_CORE), true)
+          COPY_JVM_CFG_FILE := true
+        endif
+      endif
     endif
   endif
 endif
@@ -362,14 +368,14 @@ endif
 $(PROPS_DST): $(PROPS_SRC)
 	$(MKDIR) -p $(@D)
         ifndef OPENJDK
-	  $(TOOL_ADDTORESTRICTEDPKGS) $^ $@.tmp $(RESTRICTED_PKGS)
-        else
+	$(TOOL_ADDTORESTRICTEDPKGS) $^ $@.tmp $(RESTRICTED_PKGS)
+else
 	  $(CP) $^ $@.tmp
         endif
         ifeq ($(UNLIMITED_CRYPTO), true)
 	  $(TOOL_CRYPTOLEVEL) $@.tmp $@.tmp2 unlimited
 	  $(MV) $@.tmp2 $@.tmp
-        endif
+endif
 	$(MV) $@.tmp $@
 
 COPY_FILES += $(PROPS_DST)

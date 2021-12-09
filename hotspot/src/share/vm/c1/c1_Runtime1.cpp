@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,9 +547,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // normal bytecode execution.
     thread->clear_exception_oop_and_pc();
 
-    Handle original_exception(thread, exception());
-
-    continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false);
+    bool recursive_exception = false;
+    continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false, recursive_exception);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
     thread->set_exception_oop(exception());
     thread->set_exception_pc(pc);
@@ -557,8 +556,9 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // the exception cache is used only by non-implicit exceptions
     // Update the exception cache only when there didn't happen
     // another exception during the computation of the compiled
-    // exception handler.
-    if (continuation != NULL && original_exception() == exception()) {
+    // exception handler. Checking for exception oop equality is not
+    // sufficient because some exceptions are pre-allocated and reused.
+    if (continuation != NULL && !recursive_exception) {
       nm->add_handler_for_exception_and_pc(exception, pc, continuation);
     }
   }
@@ -957,7 +957,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       NativeGeneralJump* jump = nativeGeneralJump_at(caller_frame.pc());
       address instr_pc = jump->jump_destination();
       NativeInstruction* ni = nativeInstruction_at(instr_pc);
-      if (ni->is_jump() ) {
+      if (ni->is_jump()) {
         // the jump has not been patched yet
         // The jump destination is slow case and therefore not part of the stubs
         // (stubs are only for StaticCalls)
@@ -1085,7 +1085,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
-#ifdef ARM
+#if defined(ARM) && !defined(AARCH32)
           if((load_klass_or_mirror_patch_id ||
               stub_id == Runtime1::load_appendix_patching_id) &&
               nativeMovConstReg_at(copy_buff)->is_pc_relative()) {
@@ -1154,6 +1154,15 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           }
 #endif
           }
+#ifdef AARCH32
+          // AArch32 have (disabled) relocation for offset, should enable it back
+          if (stub_id == Runtime1::access_field_patching_id) {
+            nmethod* nm = CodeCache::find_nmethod(instr_pc);
+            RelocIterator iter(nm, (address)instr_pc, (address)(instr_pc + 1));
+            relocInfo::change_reloc_info_for_address(&iter, (address) instr_pc,
+                                                     relocInfo::none, relocInfo::section_word_type);
+          }
+#endif
 
         } else {
           ICache::invalidate_range(copy_buff, *byte_count);
