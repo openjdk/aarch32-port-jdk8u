@@ -1014,7 +1014,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1257,7 +1256,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1510,15 +1508,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1656,7 +1645,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1809,7 +1798,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -3498,6 +3486,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+# Code to run after AC_OUTPUT
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3923,6 +3914,8 @@ pkgadd_help() {
 # printing --help. If so, we will print out additional information that can
 # only be extracted within the autoconf script, and then exit. This must be
 # called at the very beginning in configure.ac.
+
+
 
 
 
@@ -4395,7 +4388,7 @@ VS_SDK_PLATFORM_NAME_2017=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1624896904
+DATE_WHEN_GENERATED=1629130773
 
 ###############################################################################
 #
@@ -13646,8 +13639,14 @@ test -n "$target_alias" &&
       VAR_CPU_ENDIAN=little
       ;;
     arm*)
-      VAR_CPU=arm
-      VAR_CPU_ARCH=arm
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    aarch32)
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
@@ -13784,8 +13783,14 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ENDIAN=little
       ;;
     arm*)
-      VAR_CPU=arm
-      VAR_CPU_ARCH=arm
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    aarch32)
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
@@ -13992,6 +13997,8 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_TARGET_CPU_OSARCH="amd64"
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch32; then
+    OPENJDK_TARGET_CPU_OSARCH="arm"
   fi
 
 
@@ -14624,10 +14631,13 @@ $as_echo "$with_jvm_variants" >&6; }
 
 
   INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+  if test "x$JVM_VARIANT_ZERO" = xtrue; then
     INCLUDE_SA=false
   fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch32; then
     INCLUDE_SA=false
   fi
   if test "x$VAR_CPU" = xppc64 -o "x$VAR_CPU" = xppc64le ; then
@@ -15189,9 +15199,9 @@ $as_echo "in current directory" >&6; }
       # is performed.
       filtered_files=`$ECHO "$files_present" \
           | $SED -e 's/config.log//g' \
-	      -e 's/confdefs.h//g' \
-	      -e 's/fixpath.exe//g' \
-	      -e 's/ //g' \
+              -e 's/configure.log//g' \
+              -e 's/confdefs.h//g' \
+              -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Current directory is $CURDIR." >&5
@@ -54672,14 +54682,31 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
+# After AC_OUTPUT, we need to do final work
 
-# Try to move the config.log file to the output directory.
-if test -e ./config.log; then
-  $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
-fi
 
-# Make the compare script executable
-$CHMOD +x $OUTPUT_ROOT/compare.sh
+  # Try to move the config.log file to the output directory.
+  if test -e ./config.log; then
+    $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
+  fi
+
+  # Rotate our log file (configure.log)
+  if test -e "$OUTPUT_ROOT/configure.log.old"; then
+    $RM -f "$OUTPUT_ROOT/configure.log.old"
+  fi
+  if test -e "$OUTPUT_ROOT/configure.log"; then
+    $MV -f "$OUTPUT_ROOT/configure.log" "$OUTPUT_ROOT/configure.log.old" 2> /dev/null
+  fi
+
+  # Move configure.log from current directory to the build output root
+  if test -e ./configure.log; then
+    echo found it
+    $MV -f ./configure.log "$OUTPUT_ROOT/configure.log" 2> /dev/null
+  fi
+
+  # Make the compare script executable
+  $CHMOD +x $OUTPUT_ROOT/compare.sh
+
 
 # Finally output some useful information to the user
 
@@ -54754,5 +54781,21 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "WARNING: The toolchain version used is known to have issues. Please\n"
     printf "consider using a supported version unless you know what you are doing.\n"
     printf "\n"
+  fi
+
+
+  # Locate config.log.
+  if test -e "./config.log"; then
+    CONFIG_LOG_PATH="."
+  fi
+
+  if test -e "$CONFIG_LOG_PATH/config.log"; then
+    $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" > /dev/null 2>&1
+    if test $? -eq 0; then
+      printf "The following warnings were produced. Repeated here for convenience:\n"
+      # We must quote sed expression (using []) to stop m4 from eating the [].
+      $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" | $SED -e  's/^configure:[0-9]*: //'
+      printf "\n"
+    fi
   fi
 
