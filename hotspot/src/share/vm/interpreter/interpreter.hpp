@@ -145,6 +145,7 @@ class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateI
   public:
   // Debugging/printing
   static InterpreterCodelet* codelet_containing(address pc)     { return (InterpreterCodelet*)_code->stub_containing(pc); }
+
 #ifdef TARGET_ARCH_x86
 # include "interpreter_x86.hpp"
 #endif
@@ -162,6 +163,9 @@ class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateI
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "interpreter_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "interpreter_aarch32.hpp"
 #endif
 
 };
