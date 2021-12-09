@@ -335,6 +335,9 @@ class Copy : AllStatic {
 #ifdef TARGET_ARCH_x86
 # include "copy_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "copy_aarch64.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "copy_sparc.hpp"
 #endif
@@ -346,6 +349,9 @@ class Copy : AllStatic {
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "copy_ppc.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "copy_aarch32.hpp"
 #endif
 
 };
