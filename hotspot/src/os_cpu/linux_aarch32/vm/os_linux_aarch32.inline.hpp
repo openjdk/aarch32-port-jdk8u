@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2015, Linaro Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 4102731
- * @summary Test the java.net.multicastsocket.leave method
  *
  */
 
-import java.net.*;
-import java.io.*;
+#ifndef OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
+#define OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
 
-public class Leave {
+#include "runtime/os.hpp"
 
-    public static void main(String args[]) throws Exception {
-        MulticastSocket socket = null;
-        InetAddress mca = null;
-
-        mca = InetAddress.getByName("224.80.80.80");
-        socket = new MulticastSocket();
-        socket.joinGroup(mca);
-        socket.leaveGroup(mca);
-        socket.close();
-    }
+// See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
+inline jlong os::rdtsc() {
+  uint64_t res;
+  uint32_t ts1, ts2;
+  __asm__ __volatile__ ("rdtsc" : "=a" (ts1), "=d" (ts2));
+  res = ((uint64_t)ts1 | (uint64_t)ts2 << 32);
+  return (jlong)res;
 }
+
+#endif // OS_CPU_LINUX_AARCH32_VM_OS_LINUX_AARCH32_INLINE_HPP
