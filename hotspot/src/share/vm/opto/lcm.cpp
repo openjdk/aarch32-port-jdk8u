@@ -42,6 +42,8 @@
 # include "adfiles/ad_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/ad_aarch32.hpp"
 #endif
 
 // Optimization - Graph Style
@@ -461,7 +463,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
         insert_anti_dependences(block, n);
-      }
+}
     }
   }
 }
@@ -961,6 +963,8 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // If this is the first failure, the sentinel string will "stick"
       // to the Compile object, and the C2Compiler will see it and retry.
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
+    } else {
+      assert(false, "graph should be schedulable");
     }
     // assert( phi_cnt == end_idx(), "did not schedule all" );
     return false;

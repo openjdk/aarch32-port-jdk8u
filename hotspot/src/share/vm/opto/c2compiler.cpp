@@ -37,6 +37,8 @@
 # include "adfiles/ad_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "adfiles/ad_ppc_64.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "adfiles/ad_aarch32.hpp"
 #endif
 
 // register information defined by ADLC
@@ -109,7 +111,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
   assert(is_initialized(), "Compiler thread must be initialized");
 
   bool subsume_loads = SubsumeLoads;
-  bool do_escape_analysis = DoEscapeAnalysis && !env->jvmti_can_access_local_variables();
+  bool do_escape_analysis = DoEscapeAnalysis && !env->should_retain_local_variables();
   bool eliminate_boxing = EliminateAutoBox;
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
