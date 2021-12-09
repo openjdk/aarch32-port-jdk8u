@@ -43,9 +43,10 @@
 #define X_ZERO          6
 #define X_ARM           7
 #define X_PPC           8
-#define X_PPC64         9
-#define X_PPC64LE      10
-#define X_AARCH64      11
+#define X_AARCH64       9
+#define X_AARCH32      10
+#define X_PPC64        11
+#define X_PPC64LE      12
 
 // **********************************
 // Make sure you set X_PLATFORM and X_ARCH defines correctly.
