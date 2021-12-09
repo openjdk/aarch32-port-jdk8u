@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2015, Linaro Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 4091811 4148753
- * @summary Test java.net.MulticastSocket joinGroup and leaveGroup
  *
  */
 
-import java.io.*;
-import java.net.*;
+#include "precompiled.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threadLocalStorage.hpp"
 
+void ThreadLocalStorage::generate_code_for_get_thread() {
+  // Nothing to do
+}
 
-public class JoinGroup {
+void ThreadLocalStorage::pd_init() {
+  // Nothing to do
+}
 
-    public static void main(String args[]) throws Exception  {
-        MulticastSocket soc = null;
-        InetAddress sin = null;
-
-        soc = new MulticastSocket();
-        sin = InetAddress.getByName("224.80.80.80");
-        soc.joinGroup(sin);
-        soc.leaveGroup(sin);
-    }
+void ThreadLocalStorage::pd_set_thread(Thread* thread) {
+  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
 }
