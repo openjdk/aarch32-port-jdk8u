@@ -1884,6 +1884,15 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       LIR_Const* c = opr2->as_constant_ptr();
       if (c->type() == T_INT) {
         __ cmp(reg1, c->as_jint(), rscratch1, Assembler::C_DFLT);
+      } else if (c->type() == T_METADATA) {
+        // All we need for now is a comparison with NULL for equality.
+        assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
+        Metadata* m = c->as_metadata();
+        if (m == NULL) {
+          __ cmp(reg1, (int32_t)0);
+        } else {
+          ShouldNotReachHere();
+        }
       } else if (c->type() == T_OBJECT || c->type() == T_ARRAY) {
         jobject o = c->as_jobject();
         if (o == NULL) {
