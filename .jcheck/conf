@@ -1,7 +1,7 @@
 [general]
 project=aarch32-port
 jbs=JDK
-version=openjdk8u402
+version=openjdk8u412
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace
