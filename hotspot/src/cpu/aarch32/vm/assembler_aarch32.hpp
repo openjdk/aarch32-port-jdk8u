@@ -264,7 +264,7 @@ public:
 
 #define starti Instruction_aarch32 do_not_use(this); set_current(&do_not_use)
 
-static inline unsigned long uabs(long n) { return uabs((jlong)n); }
+static inline unsigned long uabs(long n) { return g_uabs((jlong)n); }
 
 #define S_DFLT ::lsl()
 #define C_DFLT AL
