@@ -117,8 +117,6 @@ class Bytes: AllStatic {
                       u8(p[6]) << 48 |
                       u8(p[7]) << 56;
     }
-    u4 *const a = (u4*) p;
-    return (u8(a[1]) << 32) | a[0];
   }
 
   static inline void put_native_u2(address p, u2 x) {
